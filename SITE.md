@@ -34,7 +34,12 @@
 - Page copy: in each page file under `app/`. The full copy deck is `docs/copy.md`.
 - Images: `public/images/`, named by the IDs in `docs/image-plan.md`. Hero poster and video: `public/media/`.
 
+## Live site
+- Address: https://nine-lives-supply-co.vercel.app
+- Hosted on Vercel (project nine-lives-supply-co, Orcadia Design team), connected to the GitHub repo supportorcadia/nine-lives-supply-co. Every push to the main branch deploys automatically.
+
 ## Recent Changes
+- 16 Sep 2026: Site put live on Vercel and linked to GitHub for automatic deploys.
 - 16 Sep 2026: Menu items renamed: Girth is now "Fit", From Kirkwall is now "Delivery & Returns" (web addresses unchanged). New mark: the 9 as a cat, head and ears on the bowl and a curling tail, in the top bar, stencil-cut in the footer, and as the favicon. Tape rule doubled in height with three tick sizes and a lighter twine colour. Tape-measure cat photo reshot: ticks only, no numbers, both tape ends hidden. Hero video made with Remotion: four night photographs drifting and crossfading with the tape rule pulling out along the bottom, 16 s, rendered to `public/media/hero.mp4`. Image folder now holds 133 photos; only 25 Sand is still missing.
 - 15 Sep 2026: Research, direction, art direction and copy written (`docs/`). Greybox built. After feedback: offer-first homepage, featured products with the full range moved to `/gear`, warmer copy, dark peat theme with Hi-Vis buttons, Archivo headings and Newsreader body, full-screen video hero, four picture tiles for Seen / Found / Held / Dry. 58 images generated through ChatGPT and checked side by side. Motion added. Audit written (`docs/audit.md`).
 
