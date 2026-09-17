@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PRODUCTS, bySlug } from "@/lib/catalogue";
+import { loadProduct } from "@/lib/shop";
 import { ProductView } from "@/components/ProductView";
 
 export function generateStaticParams() {
@@ -12,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = bySlug(slug);
+  const product = await loadProduct(slug);
   if (!product) notFound();
   return <ProductView product={product} />;
 }

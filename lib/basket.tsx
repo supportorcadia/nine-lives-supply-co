@@ -1,80 +1,102 @@
 "use client";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { byNo, type Colourway } from "./catalogue";
+// The basket is a Shopify cart. This context loads it once, then replaces it with whatever
+// each Server Action returns. Line details the site needs (product number, colourway,
+// size, girth, engraving) are read back from the variant's options and the line attributes.
+
+import { createContext, useContext, useEffect, useMemo, useState, useTransition } from "react";
+import { PRODUCTS, type Colourway, type Product } from "./catalogue";
+import { addLines, getCart, removeLine, updateLine, type AddLine } from "./cart-actions";
+import type { Cart, CartLine } from "./shopify-queries";
+
+export const ATTR = { girth: "Girth (cm)", line1: "Engraving line 1", line2: "Engraving line 2" } as const;
 
 export type Line = {
-  key: string;
-  no: string;
+  id: string;
+  product: Product;
   qty: number;
   colourway?: Colourway;
   size?: number;
   girth?: number;
   line1?: string;
   line2?: string;
-  metal?: "brass" | "aluminium";
+  unitPrice: number;
+  total: number;
 };
 
 type Ctx = {
   loaded: boolean;
+  busy: boolean;
+  error: string | null;
   lines: Line[];
-  add: (l: Omit<Line, "key">) => void;
-  remove: (key: string) => void;
-  setQty: (key: string, qty: number) => void;
-  clear: () => void;
+  add: (lines: AddLine[]) => Promise<boolean>;
+  remove: (lineId: string) => void;
+  setQty: (lineId: string, qty: number) => void;
   count: number;
   subtotal: number;
-  shipping: number;
+  shippingEstimate: number;
+  checkoutUrl: string | null;
   hasEngraved: boolean;
   hasCollarWithoutTag: boolean;
 };
 
 const BasketCtx = createContext<Ctx | null>(null);
-const KEY = "nl-basket";
+
+function toLine(l: CartLine): Line | null {
+  const product = PRODUCTS.find((p) => p.slug === l.merchandise.product.handle);
+  if (!product) return null;
+  const opt = (name: string) => l.merchandise.selectedOptions.find((o) => o.name === name)?.value;
+  const attr = (key: string) => l.attributes.find((a) => a.key === key)?.value;
+  const size = opt("Size");
+  const girth = attr(ATTR.girth);
+  return {
+    id: l.id,
+    product,
+    qty: l.quantity,
+    colourway: opt("Colourway") as Colourway | undefined,
+    size: size ? Number(size) : undefined,
+    girth: girth ? Number(girth) : undefined,
+    line1: attr(ATTR.line1),
+    line2: attr(ATTR.line2),
+    unitPrice: Number(l.merchandise.price.amount),
+    total: Number(l.cost.totalAmount.amount),
+  };
+}
 
 export function BasketProvider({ children }: { children: React.ReactNode }) {
-  const [lines, setLines] = useState<Line[]>([]);
+  const [cart, setCart] = useState<Cart | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, start] = useTransition();
 
   useEffect(() => {
-    // Reads the saved basket once after mount; localStorage is not available during server render.
-    let saved: Line[] = [];
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) saved = JSON.parse(raw);
-    } catch {}
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLines(saved);
-    setLoaded(true);
+    getCart().then((c) => { setCart(c); setLoaded(true); }).catch(() => setLoaded(true));
   }, []);
-  useEffect(() => {
-    if (!loaded) return;
-    try { localStorage.setItem(KEY, JSON.stringify(lines)); } catch {}
-  }, [lines, loaded]);
 
   const value = useMemo<Ctx>(() => {
-    const subtotal = lines.reduce((s, l) => s + byNo(l.no).price * l.qty, 0);
-    const hasEngraved = lines.some((l) => byNo(l.no).engraved);
-    const hasCollar = lines.some((l) => l.no === "01" || l.no === "02");
-    const hasTag = lines.some((l) => l.no === "03" || l.no === "04" || l.no === "23" || l.no === "24");
+    const lines = (cart?.lines.nodes ?? []).map(toLine).filter((l): l is Line => l !== null);
+    const subtotal = cart ? Number(cart.cost.subtotalAmount.amount) : 0;
+    const hasCollar = lines.some((l) => l.product.no === "01" || l.product.no === "02");
+    const hasTag = lines.some((l) => ["03", "04", "23", "24"].includes(l.product.no));
+    const run = (work: () => Promise<Cart>) =>
+      new Promise<boolean>((resolve) => {
+        start(async () => {
+          try { setCart(await work()); setError(null); resolve(true); }
+          catch (e) { setError(e instanceof Error ? e.message : "Something went wrong with the basket."); resolve(false); }
+        });
+      });
     return {
-      loaded,
-      lines,
-      add: (l) => setLines((prev) => {
-        const key = [l.no, l.colourway, l.size, l.line1, l.line2, l.metal].join("|");
-        const i = prev.findIndex((p) => p.key === key);
-        if (i >= 0) return prev.map((p, j) => (j === i ? { ...p, qty: p.qty + l.qty } : p));
-        return [...prev, { ...l, key }];
-      }),
-      remove: (key) => setLines((prev) => prev.filter((p) => p.key !== key)),
-      setQty: (key, qty) => setLines((prev) => prev.map((p) => (p.key === key ? { ...p, qty: Math.max(1, qty) } : p))),
-      clear: () => setLines([]),
-      count: lines.reduce((s, l) => s + l.qty, 0),
+      loaded, busy, error, lines,
+      add: (ls) => run(() => addLines(ls)),
+      remove: (id) => { void run(() => removeLine(id)); },
+      setQty: (id, qty) => { void run(() => updateLine(id, qty)); },
+      count: cart?.totalQuantity ?? 0,
       subtotal,
-      shipping: subtotal === 0 || subtotal >= 60 ? 0 : 3.95,
-      hasEngraved,
+      shippingEstimate: subtotal === 0 || subtotal >= 60 ? 0 : 3.95,
+      checkoutUrl: cart?.checkoutUrl ?? null,
+      hasEngraved: lines.some((l) => l.product.engraved),
       hasCollarWithoutTag: hasCollar && !hasTag,
     };
-  }, [lines, loaded]);
+  }, [cart, loaded, busy, error]);
 
   return <BasketCtx.Provider value={value}>{children}</BasketCtx.Provider>;
 }

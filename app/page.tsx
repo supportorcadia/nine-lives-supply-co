@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { byNo } from "@/lib/catalogue";
+import { loadShop } from "@/lib/shop";
 import { Frame } from "@/components/Frame";
 import { TapeRule } from "@/components/TapeRule";
 import { FeaturedCard } from "@/components/FeaturedCard";
 import { HeroMedia } from "@/components/HeroMedia";
 
-export default function Home() {
+export default async function Home() {
+  const shop = await loadShop();
+  const byNo = (no: string) => shop.find((p) => p.no === no)!;
   return (
     <main className="home home-hero">
       <section className="hero">

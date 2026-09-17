@@ -2,10 +2,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { COLOURWAYS, COLOURWAY_HEX, isUkPhone, sizeForGirth, type Colourway, type Product } from "@/lib/catalogue";
-import { useBasket } from "@/lib/basket";
+import { useBasket, ATTR } from "@/lib/basket";
+import { useShop } from "@/lib/shop-context";
+import { pickVariant } from "@/lib/shop";
+import type { AddLine } from "@/lib/cart-actions";
 
 export function BuyControls({ product, compact = false, onColourway }: { product: Product; compact?: boolean; onColourway?: (c: Colourway) => void }) {
-  const { add } = useBasket();
+  const { add, busy } = useBasket();
+  const shop = useShop();
+  const live = shop.byNo(product.no);
+  const brassTag = shop.byNo("03");
+  const aluTag = shop.byNo("04");
   const [colourway, setColourway] = useState<Colourway>("Hi-Vis");
   const [girth, setGirth] = useState("");
   const [line1, setLine1] = useState("");
@@ -20,7 +27,7 @@ export function BuyControls({ product, compact = false, onColourway }: { product
   const g = girth === "" ? null : Number(girth);
   const size = sizeForGirth(g);
 
-  function submit() {
+  async function submit() {
     setError(null);
     if (product.sized && size.kind !== "size") return setError("We need a girth to pick the size.");
     if (product.engraved) {
@@ -31,18 +38,31 @@ export function BuyControls({ product, compact = false, onColourway }: { product
       if (!tagLine1.trim()) return setError("We won't cut a tag without a number on it.");
       if (!isUkPhone(tagLine1)) return setError("That doesn't look like a UK number. It's the one a stranger will ring.");
     }
-    add({
-      no: product.no, qty,
-      colourway: product.colourways ? colourway : undefined,
-      size: size.kind === "size" ? size.size : undefined,
-      girth: size.kind === "size" ? g! : undefined,
-      line1: product.engraved ? line1.trim() : undefined,
-      line2: product.engraved ? line2.trim() || undefined : undefined,
-      metal: product.metal,
-    });
-    if (tag !== "none") {
-      add({ no: tag === "brass" ? "03" : "04", qty: 1, colourway: tag === "aluminium" ? colourway : undefined, line1: tagLine1.trim(), line2: tagLine2.trim() || undefined, metal: tag });
+    if (!live || !live.live) return setError("This isn't in the shop yet. Email us and we'll sort it by hand.");
+    const chosenSize = size.kind === "size" ? size.size : undefined;
+    const variant = pickVariant(live, product.colourways ? colourway : undefined, chosenSize);
+    if (!variant) return setError("That combination isn't available. Try another colour or check the girth.");
+    if (!variant.available) return setError("That one's out of stock for the moment. Try another colour, or email us.");
+
+    const attributes: { key: string; value: string }[] = [];
+    if (chosenSize && g !== null) attributes.push({ key: ATTR.girth, value: String(g) });
+    if (product.engraved) {
+      attributes.push({ key: ATTR.line1, value: line1.trim() });
+      if (line2.trim()) attributes.push({ key: ATTR.line2, value: line2.trim() });
     }
+    const lines: AddLine[] = [{ merchandiseId: variant.id, quantity: qty, attributes }];
+
+    if (tag !== "none") {
+      const tagProduct = tag === "brass" ? brassTag : aluTag;
+      const tagVariant = tagProduct && tagProduct.live ? pickVariant(tagProduct, tag === "aluminium" ? colourway : undefined) : undefined;
+      if (!tagVariant) return setError("The tag isn't in the shop yet. Add the collar now and the tag from its own page.");
+      const tagAttrs: { key: string; value: string }[] = [{ key: ATTR.line1, value: tagLine1.trim() }];
+      if (tagLine2.trim()) tagAttrs.push({ key: ATTR.line2, value: tagLine2.trim() });
+      lines.push({ merchandiseId: tagVariant.id, quantity: 1, attributes: tagAttrs });
+    }
+
+    const ok = await add(lines);
+    if (!ok) return setError("The basket didn't take that. Try once more.");
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -104,7 +124,7 @@ export function BuyControls({ product, compact = false, onColourway }: { product
           <div className="tag-options" role="radiogroup" aria-label="Add the tag">
             {(["none", "brass", "aluminium"] as const).map((t) => (
               <button key={t} type="button" role="radio" aria-checked={tag === t} className={`chip ${tag === t ? "is-selected" : ""}`} onClick={() => setTag(t)}>
-                {t === "none" ? "No tag" : t === "brass" ? "03 brass £14" : "04 aluminium £11"}
+                {t === "none" ? "No tag" : t === "brass" ? `03 brass £${brassTag?.price ?? 14}` : `04 aluminium £${aluTag?.price ?? 11}`}
               </button>
             ))}
           </div>
@@ -125,8 +145,8 @@ export function BuyControls({ product, compact = false, onColourway }: { product
             <button type="button" onClick={() => setQty(qty + 1)} aria-label="More">+</button>
           </div>
         )}
-        <button type="button" className={`btn btn-add ${added ? "is-added" : ""}`} onClick={submit}>
-          {added ? "Added" : "Add to basket"}
+        <button type="button" className={`btn btn-add ${added ? "is-added" : ""}`} onClick={submit} disabled={busy}>
+          {added ? "Added" : busy ? "Adding…" : "Add to basket"}
         </button>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
