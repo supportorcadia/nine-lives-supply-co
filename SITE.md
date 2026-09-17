@@ -31,7 +31,7 @@
 
 ## The shop behind the site (Shopify)
 - The site is a headless Shopify store. Shopify owns prices, stock, the basket, checkout, payment and orders. The site owns the words and photographs.
-- Store: vercel-store-c5b3e15a-ag9b1f67.myshopify.com, created through Vercel's Shopify integration and owned by johanna@orcadiadesign.co.uk. Admin: https://admin.shopify.com (pick the store called vercel-store-c5b3e15a).
+- Store: vercel-store-c5b3e15a-ag9b1f67.myshopify.com, created through Vercel's Shopify integration and owned by johanna@orcadiadesign.co.uk. The store is named Nine Lives Supply Co. in Shopify; its technical address stays vercel-store-c5b3e15a-ag9b1f67.myshopify.com. Admin: https://admin.shopify.com/store/vercel-store-c5b3e15a-ag9b1f67
 - Products are matched by handle: the web address slug of each product on the site (for example `skerry-collar`) is the same as its handle in Shopify. Colourway and Size are Shopify options; girth and engraving text travel with the basket line and appear on the order.
 - Shipping is set in Shopify: UK only, £3.95, free from £60.
 - The site reads prices and variants from Shopify every minute. If Shopify is ever unreachable the pages still show, with buying switched off.
