@@ -1,5 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import manifest from "@/lib/image-manifest.json";
+
+const KNOWN = new Set<string>(manifest as string[]);
 
 // Image slot. Shows /public/images/<id>.jpg when it exists. If `fallbackId` is given and the
 // file is missing, tries that instead. If `optional`, renders nothing when no file exists.
@@ -7,10 +10,13 @@ import { useEffect, useRef, useState } from "react";
 export function Frame({ id, ratio, className = "", alt = "", fallbackId, optional = false }:
   { id: string; ratio: string; className?: string; alt?: string; fallbackId?: string; optional?: boolean }) {
   const ref = useRef<HTMLImageElement>(null);
-  const [src, setSrc] = useState(id);
-  const [state, setState] = useState<"pending" | "ok" | "missing">("pending");
+  // Decide up front from the manifest, so we never request a photograph that doesn't exist.
+  const pick = (want: string) => (KNOWN.has(want) ? want : fallbackId && KNOWN.has(fallbackId) ? fallbackId : null);
+  const first = pick(id);
+  const [src, setSrc] = useState(first ?? id);
+  const [state, setState] = useState<"pending" | "ok" | "missing">(first ? "pending" : "missing");
 
-  useEffect(() => { setSrc(id); setState("pending"); }, [id]);
+  useEffect(() => { const s = pick(id); setSrc(s ?? id); setState(s ? "pending" : "missing"); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const img = ref.current;
     if (!img || state !== "pending") return;

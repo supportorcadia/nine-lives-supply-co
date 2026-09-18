@@ -75,6 +75,7 @@ export function BasketView() {
             <span className="btn btn-add btn-block" aria-disabled="true">Go to checkout</span>
           )}
           <p className="hint">Checkout is handled by Shopify. UK addresses only, in pounds. Postage is confirmed there.</p>
+          <p className="hint demo-note"><strong>Demonstration shop.</strong> Nothing is charged. If Shopify shows an &ldquo;Opening soon&rdquo; page first, the password is <strong>chirti</strong>. At payment use card number <strong>1</strong>, any future expiry and any three-digit code.</p>
           <p className="hint"><Link href="/gear">← Back to the shop</Link></p>
         </aside>
       </div>

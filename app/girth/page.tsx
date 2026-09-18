@@ -4,7 +4,7 @@ import { Frame } from "@/components/Frame";
 import { TapeRule } from "@/components/TapeRule";
 import { GirthTry } from "@/components/GirthTry";
 
-export const metadata = { title: "Girth — Nine Lives Supply Co." };
+export const metadata = { title: "Fit: how to measure a cat — Nine Lives Supply Co." };
 
 export default function Girth() {
   return (

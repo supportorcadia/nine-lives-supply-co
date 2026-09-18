@@ -24,7 +24,7 @@
 - **ManifestRow** - one numbered product row on the shop page, with its buying controls. Its picture changes with the chosen colourway.
 - **BuyControls** - colourway swatches, girth field with size readout, engraving fields, tag add-on, add-to-basket. Adds the matching Shopify variant to the cart.
 - **FeaturedCard** - the homepage product cards.
-- **Frame** - an image slot that shows `public/images/<id>.jpg` when the file exists and a labelled kraft box otherwise.
+- **Frame** - an image slot that shows `public/images/<id>.jpg` when the file exists and a labelled kraft box otherwise. It knows which photographs exist from `lib/image-manifest.json`, which is rebuilt automatically before every dev run and build, so adding a photo to `public/images` is all that's needed.
 - **HeroMedia** - plays `public/media/hero.mp4` over `public/media/hero-poster.jpg`. The video is a 16-second loop made with Remotion (see below), not footage.
 - **Mark** - the cat-tail 9, drawn as strokes so it stays the same weight at any size; `stencil` adds the bridges.
 - **Motion** - scroll effects: tape rules pull out like a tape measure, images and rows rise in, the hero drifts. All off for people with reduced motion switched on.
@@ -49,10 +49,15 @@
 - Hosted on Vercel (project nine-lives-supply-co, Orcadia Design team), connected to the GitHub repo supportorcadia/nine-lives-supply-co. Every push to the main branch deploys automatically.
 
 ## Recent Changes
+- 18 Sep 2026: Full test pass at desktop and phone widths. Fixed small product cards wrapping on phones, the basket count being clipped in the phone menu, and pages requesting photographs that don't exist. Added link-preview details for when the address is shared, and a tester note in the basket with the demo password and test card. Browser-tab titles now match the menu names. Old branch removed.
 - 17 Sep 2026: Headless Shopify. New store provisioned through Vercel, 25 products with 162 variants and 121 photos loaded, UK-only shipping set, basket and checkout moved onto Shopify. On the `headless-shopify` branch until approved.
 - 16 Sep 2026: Site put live on Vercel and linked to GitHub for automatic deploys.
 - 16 Sep 2026: Menu items renamed: Girth is now "Fit", From Kirkwall is now "Delivery & Returns" (web addresses unchanged). New mark: the 9 as a cat, head and ears on the bowl and a curling tail, in the top bar, stencil-cut in the footer, and as the favicon. Tape rule doubled in height with three tick sizes and a lighter twine colour. Tape-measure cat photo reshot: ticks only, no numbers, both tape ends hidden. Hero video made with Remotion: four night photographs drifting and crossfading with the tape rule pulling out along the bottom, 16 s, rendered to `public/media/hero.mp4`. Image folder now holds 133 photos; only 25 Sand is still missing.
 - 15 Sep 2026: Research, direction, art direction and copy written (`docs/`). Greybox built. After feedback: offer-first homepage, featured products with the full range moved to `/gear`, warmer copy, dark peat theme with Hi-Vis buttons, Archivo headings and Newsreader body, full-screen video hero, four picture tiles for Seen / Found / Held / Dry. 58 images generated through ChatGPT and checked side by side. Motion added. Audit written (`docs/audit.md`).
+
+## Sharing the site for testing
+- This is a demonstration shop. Nothing is charged: checkout runs on Shopify's test gateway. The basket page tells testers the two things they need: the "Opening soon" password (chirti, while the store is on Shopify's trial) and the test card number 1.
+- To take real orders one day: choose a Shopify plan, switch off the store password, and activate Shopify Payments. Then remove the tester note in `components/BasketView.tsx`.
 
 ## How to Customise
 - The favicon is `app/icon.svg` (the 9 in Hi-Vis).

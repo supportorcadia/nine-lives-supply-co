@@ -1,7 +1,7 @@
 import { TapeRule } from "@/components/TapeRule";
 import { Frame } from "@/components/Frame";
 
-export const metadata = { title: "From Kirkwall — shipping and returns — Nine Lives Supply Co." };
+export const metadata = { title: "Delivery and returns, posted from Kirkwall — Nine Lives Supply Co." };
 
 export default function FromKirkwall() {
   return (

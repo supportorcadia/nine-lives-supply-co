@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "hero:preview": "remotion studio remotion/index.ts",
-    "hero:render": "remotion render remotion/index.ts HeroLoop public/media/hero.mp4 --codec=h264 --crf=23"
+    "hero:render": "remotion render remotion/index.ts HeroLoop public/media/hero.mp4 --codec=h264 --crf=23",
+    "predev": "node scripts/image-manifest.mjs",
+    "prebuild": "node scripts/image-manifest.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
